@@ -1,3 +1,7 @@
+# Concurrencia y Paralelismo
+   ### Grado en Informática 2022
+   ### Práctica 1 – Cuentas de Banco
+  
   En esta práctica vamos a implementar un sistema que simula un banco donde se realizan
 operaciones contra varias cuentas de forma simultánea. Cada thread simula una persona realizando
 un ingreso en una cuenta. Tanto la cuenta como la cantidad se generan aleatoriamente.
