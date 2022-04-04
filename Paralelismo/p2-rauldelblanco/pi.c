@@ -45,7 +45,6 @@ int MPI_FlattreeColectiva(void *sendbuf, void *recvbuff, int count, MPI_Datatype
             salida[i] = entrada[i];
         }
 
-
         for (int i = 0; i < totalprocs; ++i) { //Recorremos todos los procesos excepto el proceso root
 
             if (i != root){
@@ -72,7 +71,64 @@ int MPI_FlattreeColectiva(void *sendbuf, void *recvbuff, int count, MPI_Datatype
     return MPI_SUCCESS;
 }
 
+int MPI_BinomialColectiva(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm){
 
+    if(comm != MPI_COMM_WORLD){
+        return MPI_ERR_COMM;
+    }
+
+    if(count == 0){
+        return MPI_ERR_COUNT;
+    }
+
+    if(buffer == NULL){
+        return MPI_ERR_BUFFER;
+    }
+
+    if(root != 0) {
+        return MPI_ERR_ROOT;
+    }
+    
+    int totalprocs, process, error, destino, origen;
+
+    MPI_Status status;
+
+    MPI_Comm_size(MPI_COMM_WORLD, &totalprocs); //Obtenemos el número de procesos
+    MPI_Comm_rank(MPI_COMM_WORLD, &process);   //Obtenemos el número de proceso
+
+    // El número total de iteraciones del bucle es el número entero más alto de realizar el logaritmo de todos los procesos.
+    for (int i = 1; i <= ceil(log2(totalprocs)); ++i) {
+
+        // Operación del enunciado
+        if(process < pow(2, i-1)){
+
+            //Calculamos el destino del mensaje
+            destino = process + pow(2, i-1);
+
+            //Comprobamos que el proceso que va a recibir el mensaje está dentro del rango total de procesos
+            if(destino < totalprocs){
+                error = MPI_Send(buffer, count, datatype, destino, 0, comm);
+                if(error != MPI_SUCCESS){
+                    return error;
+                }
+            }
+        } else {
+
+            // Comprobamos que el proceso que llega es un posible receptor.
+            if(process < pow(2, i)){
+
+                //Calculamos el proceso origen y recibimos el mensaje de ese proceso
+                origen = process - pow(2, i-1);
+                error = MPI_Recv(buffer, count, datatype, origen, 0, comm, &status);
+                if(error != MPI_SUCCESS){
+                    return error;
+                }
+            }
+        }
+    }
+
+    return MPI_SUCCESS;
+}
 
 
 int main(int argc, char *argv[])
@@ -100,7 +156,7 @@ int main(int argc, char *argv[])
 
         //El proceso 0 envía el valor de n a los demás procesos y estos lo reciben.
         MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
+        //MPI_BinomialColectiva(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
         if (n == 0) break; //El programa termina
 
@@ -123,8 +179,8 @@ int main(int argc, char *argv[])
         //En este punto todos los procesos tienen su valor local de PI
 
         //Hacemos la suma de todas las aproximaciones parciales de PI
-        //MPI_Reduce(&pi, &aprox, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-        MPI_FlattreeColectiva(&pi, &aprox, 1,MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&pi, &aprox, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+        //MPI_FlattreeColectiva(&pi, &aprox, 1,MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
         if(process == 0){ //Solo imprime el proceso 0
             printf("pi is approx. %.16f, Error is %.16f\n", aprox, fabs(aprox - PI25DT));
