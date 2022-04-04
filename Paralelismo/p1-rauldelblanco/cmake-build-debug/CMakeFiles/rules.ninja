@@ -42,7 +42,7 @@ rule C_EXECUTABLE_LINKER__CP_P_P1_Debug
 # Rule for re-running cmake.
 
 rule RERUN_CMAKE
-  command = /snap/clion/184/bin/cmake/linux/bin/cmake --regenerate-during-build -S/home/raul/CP-P-P1 -B/home/raul/CP-P-P1/cmake-build-debug
+  command = /snap/clion/184/bin/cmake/linux/bin/cmake --regenerate-during-build -S/home/raul/GEI-2-CP/Paralelismo/p1-rauldelblanco -B/home/raul/GEI-2-CP/Paralelismo/p1-rauldelblanco/cmake-build-debug
   description = Re-running CMake...
   generator = 1
 

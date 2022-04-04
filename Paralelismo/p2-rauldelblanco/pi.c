@@ -88,7 +88,7 @@ int MPI_BinomialColectiva(void *buffer, int count, MPI_Datatype datatype, int ro
     if(root != 0) {
         return MPI_ERR_ROOT;
     }
-    
+
     int totalprocs, process, error, destino, origen;
 
     MPI_Status status;
