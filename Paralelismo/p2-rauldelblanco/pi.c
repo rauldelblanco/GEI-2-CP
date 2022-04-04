@@ -68,6 +68,7 @@ int MPI_FlattreeColectiva(void *sendbuf, void *recvbuff, int count, MPI_Datatype
             return error;
         }
     }
+    
     return MPI_SUCCESS;
 }
 
