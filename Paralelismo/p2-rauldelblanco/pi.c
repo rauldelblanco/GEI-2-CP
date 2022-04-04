@@ -3,60 +3,66 @@
 #include <math.h>
 #include <mpi/mpi.h>
 
-/*int MPI_FlattreeColectiva(void *buf, int count, MPI_Datatype datatype, int root, MPI_Comm comm){
-
-    int totalprocs, process, error;
-
-    MPI_Status status;
-
-    MPI_Comm_size(MPI_COMM_WORLD, &totalprocs); //Obtenemos el número de procesos
-    MPI_Comm_rank(MPI_COMM_WORLD, &process); //Obtenemos el número de proceso
-
-    if(process == root){ //Hacemos esto porque el proceso 0 no siempre es el proceso root
-
-        for (int i = 0; i < totalprocs; ++i) { //Recorremos todos los procesos excepto el proceso root
-
-            if (i != root){
-                error = MPI_Send(buf, count, datatype, i, 0, comm); //El proceso root envía el mensaje a los otros procesos
-                if (error != MPI_SUCCESS){
-                    return error;
-                }
-            }
-        }
-    } else { //Los procesos que no son root reciben el mensaje del proceso root
-        error = MPI_Recv(buf, count, datatype, root, 0, comm, &status);
-        if (error != MPI_SUCCESS) {
-            return error;
-        }
-    }
-    return MPI_SUCCESS;
-}*/
-
 int MPI_FlattreeColectiva(void *sendbuf, void *recvbuff, int count, MPI_Datatype datatype, MPI_Op op, int root, MPI_Comm comm){
 
+    //Realizamos el control de errores
+
+    if(op != MPI_SUM){
+        return MPI_ERR_OP;
+    }
+
+    if(datatype != MPI_DOUBLE){
+        return MPI_ERR_TYPE;
+    }
+
+    if(comm != MPI_COMM_WORLD){
+        return MPI_ERR_COMM;
+    }
+
+    if(count == 0){
+        return MPI_ERR_COUNT;
+    }
+
+    if(sendbuf == NULL){
+        return MPI_ERR_BUFFER;
+    }
+
     int totalprocs, process, error;
+    double *salida  = (double *) recvbuff; //Hacemos un casteo para obtener el valor del buffer para recibir
+    double *entrada = (double *) sendbuf;  //Hacemos un casteo para obtener el valor del buffer para enviar
+    double *aux;
+
     MPI_Status status;
-    double aux;
 
     MPI_Comm_size(MPI_COMM_WORLD, &totalprocs); //Obtenemos el número de procesos
-    MPI_Comm_rank(MPI_COMM_WORLD, &process); //Obtenemos el número de proceso
+    MPI_Comm_rank(MPI_COMM_WORLD, &process);   //Obtenemos el número de proceso
 
     if(process == root){ //Hacemos esto porque el proceso 0 no siempre es el proceso root
+
+        aux = malloc(sizeof (double) * count);
+
+        for (int i = 0; i < count; ++i) { //Cogemos todos los valores del buffer de entrada y los introducimos en el de salida
+            salida[i] = entrada[i];
+        }
+
 
         for (int i = 0; i < totalprocs; ++i) { //Recorremos todos los procesos excepto el proceso root
 
             if (i != root){
-                error = MPI_Recv(&aux, count, datatype, i, 0, comm, &status); //El proceso root recibe el mensaje de los otros procesos
+                error = MPI_Recv(aux, count, datatype, i, 0, comm, &status); //El proceso root recibe el mensaje de los otros procesos
+
                 if (error != MPI_SUCCESS){
+                    free(aux);
                     return error;
+                }
+
+                for (int j = 0; j < count; ++j) { //En caso de que haya más de un elemento en el buffer.
+                    salida[j] += aux[j];
                 }
             }
 
-            aux += aux;
         }
-
-        //Falta poner el resultado de aux en recvbuff
-
+        free(aux);
     } else { //Los procesos que no son root envían el mensaje al proceso root
         error = MPI_Send(sendbuf, count, datatype, root, 0, comm);
         if (error != MPI_SUCCESS) {
