@@ -13,4 +13,4 @@ Prácticas de Concurrencia y Paralelismo (614G01018)
 
     P1 -> 10
     P2 -> 10
-    P3 -> 
+    P3 -> 10
